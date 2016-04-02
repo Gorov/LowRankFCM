@@ -30,6 +30,7 @@ int iter = 1;
 int finetuning = 1;
 real alpha = 0.01;
 real lambda = 0.01;
+real eta0 = 0.1;
 int rank1 = 100;
 
 int ArgPos(char *str, int argc, char **argv);
@@ -57,7 +58,8 @@ int main(int argc, char **argv) {
         if ((i = ArgPos((char *)"-output", argc, argv)) > 0) strcpy(res_file, argv[i + 1]);
         if ((i = ArgPos((char *)"-baseemb", argc, argv)) > 0) strcpy(baseemb_file, argv[i + 1]);
         if ((i = ArgPos((char *)"-rank1", argc, argv)) > 0) rank1 = atoi(argv[i + 1]);
-        
+        //if ((i = ArgPos((char *)"-rank2", argc, argv)) > 0) rank2 = atoi(argv[i + 1]);
+        if ((i = ArgPos((char *)"-eta0", argc, argv)) > 0) eta0 = atof(argv[i + 1]);
 //        if ((i = ArgPos((char *)"-epochs", argc, argv)) > 0) epochs = atoi(argv[i + 1]);
 //        if ((i = ArgPos((char *)"-alpha", argc, argv)) > 0) alpha = atof(argv[i + 1]);
         if ((i = ArgPos((char *)"-lambda", argc, argv)) > 0) lambda = atof(argv[i + 1]);
@@ -76,10 +78,10 @@ int main(int argc, char **argv) {
         params -> rank1 = rank1;
         //params -> rank2 = 12;
         //params -> rank3 = 19;
-        params -> rank2 = 20;
+        params -> rank2 = 50;
         params -> rank3 = 1;
         params -> clus = false;
-        params -> verbnet = true;
+        params -> verbnet = true;//true;
         params -> wordnet = false;
         params -> nextpos = true;
         
@@ -87,10 +89,10 @@ int main(int argc, char **argv) {
         //        FullFctModel* plearner = new FullFctModel(baseemb_file, train_file);
         plearner -> adagrad = true;
         plearner -> update_emb = false;
-        plearner -> update_feat_emb = true;
+        plearner -> update_feat_emb = false;
         plearner -> update_lab_emb = false;
-        //plearner -> eta = plearner -> eta0 = 0.05; //0.1; //0.02;
-        plearner -> eta = plearner -> eta0 = 0.1;
+        plearner -> eta = plearner -> eta0 = 0.05; //0.1; //0.02;
+        //plearner -> eta = plearner -> eta0 = 0.1;
         plearner -> lambda = lambda;
         
         plearner -> SetModels();

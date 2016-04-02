@@ -13,7 +13,7 @@
 void RunCombinedRanker::Init(char* embfile, char* trainfile, PPA_Params* params)
 {
     enable_model_1 = true;
-    enable_model_2 = false;
+    enable_model_2 = true;
     
     fea_params[0].sum = fea_params[1].sum = true;
     
@@ -35,10 +35,10 @@ void RunCombinedRanker::Init(char* embfile, char* trainfile, PPA_Params* params)
     
     fea_params[0].rank1 = fea_params[1].rank1 = params -> rank1;
     fea_params[0].rank2 = fea_params[1].rank2 = params -> rank2;
-	fea_params[0].rank2 = fea_params[0].rank1;
     fea_params[0].rank3 = fea_params[1].rank3 = params -> rank3 = 1;
     
     emb_model = new WordEmbeddingModel(embfile);
+    emb_model2 = new WordEmbeddingModel(embfile);
     
     BuildModelsFromData(trainfile);
     num_labels = (int)labeldict.size();
@@ -53,6 +53,7 @@ void RunCombinedRanker::BuildModelsFromData(char* trainfile) {
     
     fea_model[0] = new FeatureEmbeddingModel();
     fea_model[1] = new FeatureEmbeddingModel();
+	cout << "here" << endl;
     lab_model = new LabelEmbeddingModel();
     
     fea_factory[0].Init(fea_model[0], &fea_params[0]);
@@ -70,9 +71,11 @@ void RunCombinedRanker::BuildModelsFromData(char* trainfile) {
     
     num_feats = (int)fea_model[0] -> vocabdict.size();
     //    fea_model -> InitEmb(fea_params.fea_dim);
-    fea_model[0] -> InitEmb(fea_params[0].rank2);
-    fea_model[1] -> InitEmb();
-    //fea_params[0].rank2 = (int)fea_model[0] -> vocabdict.size();
+    fea_model[0] -> InitEmb();
+    fea_params[0].rank2 = (int)fea_model[0] -> vocabdict.size();
+    
+	//fea_model[1] -> InitEmb(fea_params[1].rank2);
+	fea_model[1] -> InitEmb();
     fea_params[1].rank2 = (int)fea_model[1] -> vocabdict.size();
     
     num_labels = (int)lab_model -> vocabdict.size();
@@ -90,8 +93,7 @@ void RunCombinedRanker::BuildModelsFromData(char* trainfile) {
     word_emb_dim = emb_model -> dim;
     if (enable_model_1)
     {
-        LrRankingModel* pmodel = new LrRankingModel(fea_model[0], emb_model, lab_model, fea_params[0].rank1);
-        //LrRankingModel* pmodel = new LrRankingModel(fea_model[0], emb_model, lab_model, fea_params[0].rank1, fea_params[0].rank2);
+        LrRankingModel* pmodel = new LrRankingModel(fea_model[0], emb_model, lab_model, fea_params[0].rank1, fea_params[0].rank2);
         
         pmodel -> max_list_len = max_len;
         pmodel -> max_sent_len = 3;
@@ -104,13 +106,14 @@ void RunCombinedRanker::BuildModelsFromData(char* trainfile) {
     }
     if (enable_model_2)
     {
-        LrTuckerRankingModel* pmodel = new LrTuckerRankingModel(fea_model[1], emb_model, lab_model, fea_params[1].rank1, fea_params[1].rank2, fea_params[1].rank3);
+        LrTuckerRankingModel* pmodel = new LrTuckerRankingModel(fea_model[1], emb_model2, lab_model, fea_params[1].rank1, fea_params[1].rank2, fea_params[1].rank3);
         
         pmodel -> max_list_len = max_len;
         pmodel -> max_sent_len = 3;
         pmodel -> num_labels = num_labels;
         pmodel -> num_fea = num_feats;
         pmodel -> update_word = update_emb;
+        pmodel -> update_word_emb = false;
         pmodel -> InitModel();
         
         lr_unigram_list.push_back(pmodel);
@@ -339,8 +342,6 @@ void RunCombinedRanker::TrainData(string trainfile, string devfile) {
     if (lr_bigram_list.size() != 0) {
         printf("L-emb1: %lf\n", lr_bigram_list[0] -> vec_emb_map[0][0]);
         printf("L-emb2: %lf\n", lr_bigram_list[0] -> vec_emb_map[0][fea_params[0].rank1]);
-        printf("L-emb1: %lf\n", lr_bigram_list[0] -> vec_emb_map[1][0]);
-        printf("L-emb2: %lf\n", lr_bigram_list[0] -> vec_emb_map[1][fea_params[0].rank1]);
         printf("L-emb1: %lf\n", lr_bigram_list[0] -> fea_model -> syn0[0]);
         printf("L-emb2: %lf\n", lr_bigram_list[0] -> fea_model -> syn0[fea_params[0].rank2]);
         printf("core-tensor: %lf\n", lr_bigram_list[0] -> core_tensor[0]);
@@ -363,7 +364,6 @@ void RunCombinedRanker::TrainData(string trainfile, string devfile) {
             ForwardProp();
             BackProp();
             count++;
-            if (count % 4000 == 0) EvalData(devfile);
         }
         if(!adagrad) eta = eta0 * (1 - count / (double)(total + 1));
         if (eta < eta0 * 0.0001) eta = eta0 * 0.0001;
@@ -375,6 +375,8 @@ void RunCombinedRanker::TrainData(string trainfile, string devfile) {
             printf("L-emb2: %lf\n", lr_bigram_list[0] -> vec_emb_map[0][fea_params[0].rank1]);
             printf("L-emb1: %lf\n", lr_bigram_list[0] -> fea_model -> syn0[0]);
             printf("L-emb2: %lf\n", lr_bigram_list[0] -> fea_model -> syn0[fea_params[0].rank2]);
+            printf("W-emb1: %lf\n", lr_bigram_list[0] -> emb_model -> syn0[1000]);
+            printf("W-emb2: %lf\n", lr_bigram_list[0] -> emb_model -> syn0[1000 + fea_params[0].rank1]);
             printf("core-tensor: %lf\n", lr_bigram_list[0] -> core_tensor[0]);
         }
         if (enable_model_2) 
@@ -383,6 +385,8 @@ void RunCombinedRanker::TrainData(string trainfile, string devfile) {
                 printf("L-emb2: %lf\n", lr_unigram_list[0] -> emb_map[fea_params[1].rank1]);
                 printf("L-emb1: %lf\n", lr_unigram_list[0] -> fea_model -> syn0[0]);
                 printf("L-emb2: %lf\n", lr_unigram_list[0] -> fea_model -> syn0[fea_params[1].rank2]);
+                printf("W-emb1: %lf\n", lr_unigram_list[0] -> emb_model -> syn0[1000]);
+                printf("W-emb2: %lf\n", lr_unigram_list[0] -> emb_model -> syn0[1000 + fea_params[1].rank1]);
                 printf("core-tensor: %lf\n", lr_unigram_list[0] -> core_tensor[0]);
             }
         EvalData(trainfile);

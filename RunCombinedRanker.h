@@ -31,6 +31,9 @@ public:
     WordEmbeddingModel* emb_model;
     FeatureEmbeddingModel* fea_model[2];
     
+	WordEmbeddingModel* emb_model2;
+	WordEmbeddingModel* emb_model3;
+    
     LabelEmbeddingModel* lab_model;
     vector<LrRankingModel*> lr_bigram_list;
     vector<LrTuckerRankingModel*> lr_unigram_list;

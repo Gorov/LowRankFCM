@@ -455,7 +455,6 @@ void RunBigramRanking::TrainData(string trainfile, string devfile) {
             ForwardProp();
             BackProp();
             count++;
-            if (count % 4000 == 0) EvalData(devfile);
         }
         if(!adagrad) eta = eta0 * (1 - count / (double)(total + 1));
         if (eta < eta0 * 0.0001) eta = eta0 * 0.0001;

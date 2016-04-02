@@ -23,6 +23,7 @@ void LrTuckerRankingModel::InitModel()
     for (int a = 0; a < word_emb_dim * rank1; a++) params_g[a] = 1.0;
     
     core_tensor = (real*) malloc(rank1 * rank2 * rank3 * sizeof(real));
+    printf("Core Tensor: Allocate memory: %d * %d * %d \n", rank1, rank2, rank3);
     for (int a = 0; a < rank1 * rank2 * rank3; a++) core_tensor[a] = 0.0;
     core_params_g = (real*) malloc(rank1 * rank2 * rank3 * sizeof(real));
     for (int a = 0; a < rank1 * rank2 * rank3; a++) core_params_g[a] = 1.0;
@@ -218,6 +219,27 @@ void LrTuckerRankingModel::BackPropViews(BaseInstance* b_inst, real eta_real, in
                         params_g[l1 + i] += tmp * tmp;
                         emb_map[l1 + i] += eta_real / sqrt(params_g[l1 + i]) * tmp;
                     }
+                }
+            }
+        }
+    }
+    
+    if (!update_word && update_word_emb && rank1 == word_emb_dim) { // fine tuning
+        for (n = 0; n < 2; n++) {
+            if (p_inst -> id_pairs[pair_id][n] != -1 && p_inst -> fea_num_pairs[pair_id][n] != 0) {
+                l2 = n * rank2;
+                l3 = p_inst -> id_pairs[pair_id][n] * word_emb_dim;
+                
+                for (int a = 0; a < rank1; a++) vec_word_repr_sum[pair_id][a] = 0.0;
+                for (a = 0; a < rank1; a++) {
+                    for (int j = 0; j < rank2; j++) { 
+                        vec_word_repr_sum[pair_id][a] += vec_part_struct_emb[pair_id][j * rank1 + a] * vec_feat_repr[pair_id][l2 + j];
+                    }
+                }
+                for (int k = 0; k < word_emb_dim; k++) {
+                    tmp = vec_word_repr_sum[pair_id][k];
+                    emb_model -> params_g[l3 + k] += tmp * tmp;
+                    emb_model -> syn0[l3 + k] += eta_real / sqrt(emb_model -> params_g[l3 + k]) * tmp;
                 }
             }
         }

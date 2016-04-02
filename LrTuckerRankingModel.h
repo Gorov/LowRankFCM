@@ -21,6 +21,7 @@ public:
     int max_list_len;
     
     bool update_word;
+    bool update_word_emb;
     bool update_lab_emb;
     bool debug;
     

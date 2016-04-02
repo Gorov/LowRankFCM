@@ -38,14 +38,14 @@ void LrRankingModel::InitModel()
     if (tucker) {
         core_tensor = (real*) malloc(rank * rank2 * sizeof(real));
         for (int a = 0; a < rank * rank2; a++) core_tensor[a] = 0.0;
-        printf("Core tensor: Allocate memory: %d * %d\n", rank, rank2);
+		printf("Core tensor: Allocate memory: %d * %d\n", rank, rank2);
         core_params_g = (real*) malloc(rank * rank2 * sizeof(real));
         for (int a = 0; a < rank * rank2; a++) core_params_g[a] = 1.0;
     }
     else {
         core_tensor = (real*) malloc(rank* sizeof(real));
         for (int a = 0; a < rank; a++) core_tensor[a] = 0.0;
-        printf("Core tensor: Allocate memory: %d\n", rank);
+		printf("Core tensor: Allocate memory: %d\n", rank);
         core_params_g = (real*) malloc(rank * sizeof(real));
         for (int a = 0; a < rank; a++) core_params_g[a] = 1.0;
     }
@@ -231,7 +231,7 @@ void LrRankingModel::BackPropViews(BaseInstance* b_inst, real eta_real, int pair
     PPAInstance* p_inst = (PPAInstance*) b_inst;
     
     real tmp;
-    //cout << "here" << endl;
+    
     if (update_word) {
         for (n = 0; n < 2; n++) {
             if (p_inst -> id_pairs[pair_id][n] == -1) {
